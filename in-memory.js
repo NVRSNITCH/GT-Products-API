@@ -73,4 +73,3 @@ app.delete('/products/:id', (req, res) => {
     products.splice(productIndex, 1);
     res.status(204).send();
 });
-
