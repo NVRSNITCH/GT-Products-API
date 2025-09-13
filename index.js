@@ -1,10 +1,15 @@
 // index.js
 import express from 'express';
+import dotenv from 'dotenv';
+import morgan from 'morgan';
 import postRoutes from './src/routes/post.routes.js';
 
-const app = express();
-const port = 3000;
+dotenv.config();
 
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(morgan('dev'));
 app.use(express.json());
 
 // Mount the post routes
