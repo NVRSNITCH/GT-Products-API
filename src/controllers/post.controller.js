@@ -1,4 +1,5 @@
 // src/controllers/post.controller.js
+import { validationResult } from 'express-validator';
 import * as postService from '../services/post.service.js';
 
 export const getAllPosts = (req, res) => {
@@ -15,11 +16,19 @@ export const getPostById = (req, res) => {
     res.json(post);
 };
 
+// src/controllers/post.controller.js
+
 export const createPost = (req, res) => {
-    const { title, content } = req.body;
-    if (!title || !content) {
-        return res.status(400).json({ message: 'Title and content are required.' });
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
     }
+
+    // This part only runs if validation passes
+    const { title, content } = req.body;
+    // We can remove the manual check because the validator handles it
+    // if (!title || !content) { ... }
     const newPost = postService.createPost({ title, content });
     res.status(201).json(newPost);
 };
