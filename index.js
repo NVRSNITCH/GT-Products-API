@@ -3,6 +3,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
 import postRoutes from './src/routes/post.routes.js';
+import { testConnection } from './src/config/db.js'; 
 
 dotenv.config();
 
@@ -17,4 +18,5 @@ app.use('/posts', postRoutes);
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
+    testConnection(); // Test the database connection on startup
 });
