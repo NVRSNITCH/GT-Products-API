@@ -1,31 +1,50 @@
-// src/services/comment.service.js
+import pool from "../config/db.js";
+import { ApiError } from "../utils/ApiError.js";
 
-// In-memory "database" for comments
-let comments = [
-    { id: 1, text: 'Great first post!', postId: 1 },
-    { id: 2, text: 'I agree, very insightful.', postId: 1 },
-    { id: 3, text: 'This is a comment on the second post.', postId: 2 },
-];
-let nextId = 4;
-
-// We need access to posts to ensure a post exists before adding a comment
-import { getPostById } from './post.service.js';
-
-export const getAllComments = () => {
-    return comments;
+export const getAllComments = async () => {
+  const [rows] = await pool.query("SELECT * FROM comments");
+  if (!rows) {
+    throw new ApiError(404, "Comments not found");
+  }
+  return rows;
 };
 
-export const getCommentsByPostId = (postId) => {
-    return comments.filter(c => c.postId === postId);
+export const getCommentsByPostId = async (postId) => {
+  const [rows] = await pool.query("SELECT * FROM comments WHERE postId = ?", [
+    postId,
+  ]);
+  if (rows.length === 0) {
+    throw new ApiError(404, "Comments not found");
+  }
+  return rows;
 };
 
-export const createComment = (postId, commentData) => {
-    // Check if the post actually exists before creating a comment for it
-    const post = getPostById(postId);
-    if (!post) {
-        return null; // Or throw an error
+export const createComment = async (commentData) => {
+  try {
+    const { text, authorId, postId } = commentData;
+    const [result] = await pool.query(
+      "INSERT INTO comments (text, authorId, postId) VALUES (?, ?, ?)",
+      [text, authorId, postId]
+    );
+
+    if (result.affectedRows === 0) {
+      throw new ApiError(500, "Failed to create comment.");
     }
-    const newComment = { id: nextId++, postId, ...commentData };
-    comments.push(newComment);
-    return newComment;
+
+    const [newComment] = await pool.query(
+      "SELECT * FROM comments WHERE id = ?",
+      [result.insertId]
+    );
+
+    if (!newComment[0]) {
+      throw new ApiError(500, "Failed to retrieve the new comment.");
+    }
+
+    return newComment[0];
+  } catch (error) {
+    if (error.code === "ER_NO_REFERENCED_ROW_2") {
+      throw new ApiError(400, "Invalid authorId or postId.");
+    }
+    throw error;
+  }
 };

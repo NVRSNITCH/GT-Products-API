@@ -1,5 +1,5 @@
-# Dependencies
+#dependencies
 node_modules
 
-# Environment variables
+#environment variables
 .env

@@ -1,60 +1,88 @@
-// src/controllers/post.controller.js
-import { validationResult } from 'express-validator';
-    // src/controllers/post.controller.js
-    import * as postService from '../services/post.service.js';
+import * as postService from "../services/post.service.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import asyncHandler from "express-async-handler";
 
-    export const getAllPosts = async (req, res) => {
-        try {
-            const posts = await postService.getAllPosts();
-            res.json(posts);
-        } catch (error) {
-            res.status(500).json({ message: 'Error retrieving posts', error: error.message });
-        }
-    };
-
-    // (Apply the same async/await and try/catch pattern to all other controller functions:
-    // getPostById, createPost, updatePost, partiallyUpdatePost, and deletePost)
-
-export const getPostById = (req, res) => {
-    const postId = parseInt(req.params.id, 10);
-    const post = postService.getPostById(postId);
-    if (!post) {
-        return res.status(404).json({ message: 'Post not found.' });
-    }
-    res.json(post);
+export const getAllPosts = async (req, res) => {
+  try {
+    const posts = await postService.getAllPosts();
+    return res
+      .status(200)
+      .json(new ApiResponse(200, posts, "Posts retrieved successfully"));
+  } catch (error) {
+    res.status(500).json({
+      message: "Error retrieving posts",
+      error: error.message,
+    });
+  }
 };
 
-// src/controllers/post.controller.js
+export const getPostById = asyncHandler(async (req, res) => {
+  const postId = parseInt(req.params.id, 10);
+  const post = await postService.getPostById(postId);
 
-export const createPost = (req, res) => {
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, post, "Post retrieved successfully"));
+});
 
-    // This part only runs if validation passes
-    const { title, content } = req.body;
-    // We can remove the manual check because the validator handles it
-    // if (!title || !content) { ... }
-    const newPost = postService.createPost({ title, content });
-    res.status(201).json(newPost);
+export const createPost = async (req, res) => {
+  try {
+    const newPost = await postService.createPost(req.body);
+    res
+      .status(201)
+      .json(new ApiResponse(201, newPost, "Post created successfully"));
+  } catch (error) {
+    res.status(500).json({
+      message: "Error creating post",
+      error: error.message,
+    });
+  }
 };
 
-export const updatePost = (req, res) => {
+export const updatePost = async (req, res) => {
+  try {
     const postId = parseInt(req.params.id, 10);
-    const post = postService.updatePost(postId, req.body);
-    if (!post) {
-        return res.status(404).json({ message: 'Post not found.' });
+    const updatedPost = await postService.updatePost(postId, req.body);
+    if (!updatedPost) {
+      return res.status(404).json({ message: "Post not found." });
     }
-    res.json(post);
+    res.json(updatedPost);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error updating post",
+      error: error.message,
+    });
+  }
 };
 
-export const deletePost = (req, res) => {
+export const partiallyUpdatePost = async (req, res) => {
+  try {
     const postId = parseInt(req.params.id, 10);
-    const success = postService.deletePost(postId);
+    const updatedPost = await postService.partiallyUpdatePost(postId, req.body);
+    if (!updatedPost) {
+      return res.status(404).json({ message: "Post not found." });
+    }
+    res.json(updatedPost);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error partially updating post",
+      error: error.message,
+    });
+  }
+};
+
+export const deletePost = async (req, res) => {
+  try {
+    const postId = parseInt(req.params.id, 10);
+    const success = await postService.deletePost(postId);
     if (!success) {
-        return res.status(404).json({ message: 'Post not found.' });
+      return res.status(404).json({ message: "Post not found." });
     }
     res.status(204).send();
+  } catch (error) {
+    res.status(500).json({
+      message: "Error deleting post",
+      error: error.message,
+    });
+  }
 };
