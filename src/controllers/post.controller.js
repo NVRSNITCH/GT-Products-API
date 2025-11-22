@@ -1,4 +1,5 @@
 import * as postService from "../services/post.service.js";
+import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "express-async-handler";
 
@@ -56,12 +57,29 @@ export const updatePost = async (req, res) => {
 export const partiallyUpdatePost = async (req, res) => {
   try {
     const postId = parseInt(req.params.id, 10);
-    const updatedPost = await postService.partiallyUpdatePost(postId, req.body);
-    if (!updatedPost) {
-      return res.status(404).json({ message: "Post not found." });
+    const userId = req.user.id;
+    const post = await postService.getPostById(postId);
+    if (post.authorId !== userId) {
+      throw new ApiError(
+        403,
+        "Forbidden: You do not have permission to modify this post."
+      );
     }
-    res.json(updatedPost);
+
+    const updatedPost = await postService.partiallyUpdatePost(
+      postId,
+      req.body
+    );
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, updatedPost, "Post partially updated successfully")
+      );
   } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
     res.status(500).json({
       message: "Error partially updating post",
       error: error.message,
